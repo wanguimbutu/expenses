@@ -1,10 +1,12 @@
 {
  "actions": [],
  "allow_rename": 1,
+ "autoname": "naming_series:",
  "creation": "2025-06-04 08:26:17.740144",
  "doctype": "DocType",
  "engine": "InnoDB",
  "field_order": [
+  "naming_series",
   "account_paid_from",
   "amount",
   "column_break_uxxz",
@@ -125,15 +127,23 @@
    "fieldname": "total_vat",
    "fieldtype": "Currency",
    "label": "Total VAT"
+  },
+  {
+   "fieldname": "naming_series",
+   "fieldtype": "Select",
+   "label": "Series",
+   "options": "PTC-.YYYY.-",
+   "reqd": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-06-04 09:15:16.303202",
+ "modified": "2025-06-04 09:58:32.709254",
  "modified_by": "Administrator",
  "module": "Erpnext Expenses",
  "name": "Petty Cash Voucher",
+ "naming_rule": "By \"Naming Series\" field",
  "owner": "Administrator",
  "permissions": [
   {
