@@ -1,0 +1,135 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-06-04 08:26:17.740144",
+ "doctype": "DocType",
+ "engine": "InnoDB",
+ "field_order": [
+  "account_paid_from",
+  "amount",
+  "column_break_uxxz",
+  "posting_date",
+  "company",
+  "section_break_fzpc",
+  "petty_cash_details",
+  "section_break_kaex",
+  "column_break_vjzy",
+  "column_break_pbvl",
+  "total",
+  "section_break_qker",
+  "vat_details",
+  "section_break_ns5f",
+  "amended_from"
+ ],
+ "fields": [
+  {
+   "fieldname": "section_break_ns5f",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "amended_from",
+   "fieldtype": "Link",
+   "label": "Amended From",
+   "no_copy": 1,
+   "options": "Petty Cash Voucher",
+   "print_hide": 1,
+   "read_only": 1,
+   "search_index": 1
+  },
+  {
+   "fieldname": "account_paid_from",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Account Paid From",
+   "link_filters": "[[\"Account\",\"account_type\",\"in\",[\"Bank\",\"Cash\",null]]]",
+   "options": "Account",
+   "reqd": 1
+  },
+  {
+   "fieldname": "amount",
+   "fieldtype": "Currency",
+   "label": "Amount"
+  },
+  {
+   "fieldname": "column_break_uxxz",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "posting_date",
+   "fieldtype": "Date",
+   "in_list_view": 1,
+   "label": "Posting Date",
+   "reqd": 1
+  },
+  {
+   "fieldname": "section_break_fzpc",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "petty_cash_details",
+   "fieldtype": "Table",
+   "label": "Petty Cash Details",
+   "options": "Petty Cash Details"
+  },
+  {
+   "fieldname": "section_break_kaex",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_vjzy",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_pbvl",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "total",
+   "fieldtype": "Currency",
+   "label": "Total"
+  },
+  {
+   "fieldname": "section_break_qker",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "vat_details",
+   "fieldtype": "Table",
+   "label": "VAT Details",
+   "options": "Petty Cash Vat Details"
+  },
+  {
+   "fieldname": "company",
+   "fieldtype": "Link",
+   "label": "Company",
+   "options": "Company",
+   "reqd": 1
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "is_submittable": 1,
+ "links": [],
+ "modified": "2025-06-04 08:51:43.077328",
+ "modified_by": "Administrator",
+ "module": "Erpnext Expenses",
+ "name": "Petty Cash Voucher",
+ "owner": "Administrator",
+ "permissions": [
+  {
+   "create": 1,
+   "delete": 1,
+   "email": 1,
+   "export": 1,
+   "print": 1,
+   "read": 1,
+   "report": 1,
+   "role": "System Manager",
+   "share": 1,
+   "submit": 1,
+   "write": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

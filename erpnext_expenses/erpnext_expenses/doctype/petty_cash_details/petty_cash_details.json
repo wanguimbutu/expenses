@@ -1,0 +1,82 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-06-04 08:28:03.904880",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "expense_account",
+  "party_type",
+  "party_name",
+  "debit",
+  "user_remarks",
+  "project",
+  "reference_no",
+  "reference_date"
+ ],
+ "fields": [
+  {
+   "fieldname": "expense_account",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Expense Account",
+   "link_filters": "[[\"Account\",\"account_type\",\"=\",\"Expense Account\"]]",
+   "options": "Account"
+  },
+  {
+   "fieldname": "party_type",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Party Type",
+   "options": "DocType"
+  },
+  {
+   "fieldname": "party_name",
+   "fieldtype": "Dynamic Link",
+   "in_list_view": 1,
+   "label": "Party Name",
+   "options": "party_type"
+  },
+  {
+   "fieldname": "debit",
+   "fieldtype": "Currency",
+   "in_list_view": 1,
+   "label": "Debit"
+  },
+  {
+   "fieldname": "project",
+   "fieldtype": "Link",
+   "label": "Project",
+   "options": "Project"
+  },
+  {
+   "fieldname": "user_remarks",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "User Remarks"
+  },
+  {
+   "fieldname": "reference_no",
+   "fieldtype": "Data",
+   "label": "Reference No"
+  },
+  {
+   "fieldname": "reference_date",
+   "fieldtype": "Date",
+   "label": "Reference Date"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2025-06-04 08:36:33.062182",
+ "modified_by": "Administrator",
+ "module": "Erpnext Expenses",
+ "name": "Petty Cash Details",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}
