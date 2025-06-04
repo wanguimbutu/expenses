@@ -8,12 +8,13 @@
  "field_order": [
   "expense_account",
   "party_type",
-  "party_name",
+  "party",
   "debit",
   "user_remarks",
   "project",
   "reference_no",
-  "reference_date"
+  "reference_date",
+  "cost_center"
  ],
  "fields": [
   {
@@ -21,7 +22,7 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Expense Account",
-   "link_filters": "[[\"Account\",\"account_type\",\"=\",\"Expense Account\"]]",
+   "link_filters": "[[\"Account\",\"root_type\",\"=\",\"Expense\"]]",
    "options": "Account"
   },
   {
@@ -30,13 +31,6 @@
    "in_list_view": 1,
    "label": "Party Type",
    "options": "DocType"
-  },
-  {
-   "fieldname": "party_name",
-   "fieldtype": "Dynamic Link",
-   "in_list_view": 1,
-   "label": "Party Name",
-   "options": "party_type"
   },
   {
    "fieldname": "debit",
@@ -65,12 +59,25 @@
    "fieldname": "reference_date",
    "fieldtype": "Date",
    "label": "Reference Date"
+  },
+  {
+   "fieldname": "cost_center",
+   "fieldtype": "Link",
+   "label": "Cost Center",
+   "options": "Cost Center"
+  },
+  {
+   "fieldname": "party",
+   "fieldtype": "Dynamic Link",
+   "in_list_view": 1,
+   "label": "Party ",
+   "options": "party_type"
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-06-04 08:36:33.062182",
+ "modified": "2025-06-04 09:39:20.215024",
  "modified_by": "Administrator",
  "module": "Erpnext Expenses",
  "name": "Petty Cash Details",

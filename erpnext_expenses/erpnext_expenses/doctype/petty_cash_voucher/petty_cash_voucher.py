@@ -8,6 +8,7 @@ from erpnext.accounts.utils import get_account_currency
 class PettyCashVoucher(Document):
     def validate(self):
         self.total = sum(flt(row.debit) for row in self.petty_cash_details)
+        self.calculate_totals()
 
     def validate_user_account_access(self):
         allowed_accounts = frappe.get_all("User Permission",
@@ -16,7 +17,12 @@ class PettyCashVoucher(Document):
         )
         if self.account_paid_from and self.account_paid_from not in allowed_accounts:
             frappe.throw(frappe._("You are not permitted to use account {0}").format(self.account_paid_from))
-        
+	
+    def calculate_totals(self):
+        self.total = sum(flt(row.debit) for row in self.petty_cash_details)
+        self.total_vat = sum(flt(row.amount) for row in self.vat_details)
+        self.amount = self.total + self.total_vat
+    
     def on_submit(self):
         self.make_gl_entries(cancel=False)
 

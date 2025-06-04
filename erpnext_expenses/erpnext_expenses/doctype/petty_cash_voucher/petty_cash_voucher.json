@@ -18,6 +18,10 @@
   "total",
   "section_break_qker",
   "vat_details",
+  "section_break_jrvp",
+  "column_break_uxdy",
+  "column_break_behg",
+  "total_vat",
   "section_break_ns5f",
   "amended_from"
  ],
@@ -104,12 +108,29 @@
    "label": "Company",
    "options": "Company",
    "reqd": 1
+  },
+  {
+   "fieldname": "section_break_jrvp",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_uxdy",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_behg",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "total_vat",
+   "fieldtype": "Currency",
+   "label": "Total VAT"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-06-04 08:51:43.077328",
+ "modified": "2025-06-04 09:15:16.303202",
  "modified_by": "Administrator",
  "module": "Erpnext Expenses",
  "name": "Petty Cash Voucher",
