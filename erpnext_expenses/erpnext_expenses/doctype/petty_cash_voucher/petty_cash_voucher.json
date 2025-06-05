@@ -12,6 +12,7 @@
   "column_break_uxxz",
   "posting_date",
   "company",
+  "attach",
   "section_break_fzpc",
   "petty_cash_details",
   "section_break_kaex",
@@ -47,7 +48,7 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Account Paid From",
-   "link_filters": "[[\"Account\",\"account_type\",\"in\",[\"Bank\",\"Cash\",null]]]",
+   "link_filters": "[[\"Account\",\"root_type\",\"=\",\"Asset\"]]",
    "options": "Account",
    "reqd": 1
   },
@@ -134,12 +135,17 @@
    "label": "Series",
    "options": "PTC-.YYYY.-",
    "reqd": 1
+  },
+  {
+   "fieldname": "attach",
+   "fieldtype": "Attach",
+   "label": "Attach "
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-06-04 09:58:32.709254",
+ "modified": "2025-06-05 11:04:41.735063",
  "modified_by": "Administrator",
  "module": "Erpnext Expenses",
  "name": "Petty Cash Voucher",
