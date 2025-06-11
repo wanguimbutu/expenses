@@ -92,7 +92,14 @@ frappe.ui.form.on('Petty Cash Vat Details', {
     }
 });
 
-
+frappe.ui.form.on('Petty Cash Items', {
+    qty: function(frm, cdt, cdn) {
+        update_amount(cdt, cdn);
+    },
+    rate: function(frm, cdt, cdn) {
+        update_amount(cdt, cdn);
+    }
+});
 
 function calculate_totals(frm) {
     let total = 0;
@@ -108,4 +115,10 @@ function calculate_totals(frm) {
 
     frm.set_value('total', total);
     frm.set_value('total_vat', total_vat);
+}
+
+function update_amount(cdt, cdn) {
+    const row = locals[cdt][cdn];
+    row.amount = flt(row.qty) * flt(row.rate);
+    frappe.model.set_value(cdt, cdn, "amount", row.amount);
 }

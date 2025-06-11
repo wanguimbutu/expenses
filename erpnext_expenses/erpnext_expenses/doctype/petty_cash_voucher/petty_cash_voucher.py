@@ -24,6 +24,7 @@ class PettyCashVoucher(Document):
 
     def on_submit(self):
         self.make_gl_entries(cancel=False)
+        self.update_inventory()
 
     def on_cancel(self):
         self.make_gl_entries(cancel=True)
@@ -100,3 +101,21 @@ class PettyCashVoucher(Document):
             "posting_time": nowdate(),
             "is_opening": "No"
         })
+    
+    def update_inventory(self):
+        for row in self.petty_cash_items:
+            if not row.item_code or not row.warehouse:
+                frappe.throw("Each item must have an Item Code and Warehouse.")
+
+            # Create stock ledger entry
+            frappe.get_doc({
+                "doctype": "Stock Entry",
+                "stock_entry_type": "Material Receipt",
+                "company": self.company,
+                "items": [{
+                    "item_code": row.item_code,
+                    "qty": row.qty,
+                    "t_warehouse": row.warehouse,
+                    "rate": row.rate
+                }]
+            }).insert(ignore_permissions=True).submit()

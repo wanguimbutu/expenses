@@ -25,6 +25,8 @@
   "column_break_uxdy",
   "column_break_behg",
   "total_vat",
+  "section_break_gstm",
+  "petty_cash_items",
   "section_break_ns5f",
   "amended_from"
  ],
@@ -48,7 +50,7 @@
    "fieldtype": "Link",
    "in_list_view": 1,
    "label": "Account Paid From",
-   "link_filters": "[[\"Account\",\"root_type\",\"=\",\"Asset\"]]",
+   "link_filters": "[]",
    "options": "Account",
    "reqd": 1
   },
@@ -140,12 +142,22 @@
    "fieldname": "attach",
    "fieldtype": "Attach",
    "label": "Attach "
+  },
+  {
+   "fieldname": "section_break_gstm",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "petty_cash_items",
+   "fieldtype": "Table",
+   "label": "Petty Cash Items",
+   "options": "Petty Cash Items"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-06-05 11:04:41.735063",
+ "modified": "2025-06-11 22:38:41.080704",
  "modified_by": "Administrator",
  "module": "Erpnext Expenses",
  "name": "Petty Cash Voucher",
