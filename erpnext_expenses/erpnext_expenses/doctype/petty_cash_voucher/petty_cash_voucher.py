@@ -6,7 +6,7 @@ from erpnext.accounts.utils import get_account_currency
 
 class PettyCashVoucher(Document):
     def validate(self):
-       #self.validate_user_account_access()
+       # self.validate_user_account_access()
         self.calculate_totals()
         self.set_default_cost_centers()
 
@@ -134,48 +134,19 @@ class PettyCashVoucher(Document):
         })
     
     def update_inventory(self):
-        """Create stock entry for petty cash items"""
-        
-        if not self.petty_cash_items:
-            return
-            
-        try:
-            # Create a single Stock Entry for all items
-            stock_entry = frappe.new_doc("Stock Entry")
-            stock_entry.stock_entry_type = "Material Receipt"
-            stock_entry.company = self.company
-            stock_entry.posting_date = self.posting_date
-            stock_entry.set_posting_time = 1
-            #stock_entry.posting_time = "12:00:00"
-            
-            for row in self.petty_cash_items:
-                if not row.item_code or not row.warehouse:
-                    frappe.throw("Each item must have an Item Code and Warehouse.")
-                
-                # Get item details
-                item = frappe.get_doc("Item", row.item_code)
-                
-                # Add item to stock entry
-                stock_entry.append("items", {
-                    "item_code": row.item_code,
-                    "qty": flt(row.qty),
-                    "basic_rate": flt(row.rate),
-                    "uom": item.stock_uom,
-                    "stock_uom": item.stock_uom,
-                    "conversion_factor": 1,
-                    "t_warehouse": row.warehouse,
-                    "cost_center": row.cost_center or frappe.db.get_value("Company", self.company, "cost_center")
-                })
-            
-            # Save and submit
-            stock_entry.save(ignore_permissions=True)
-            stock_entry.submit()
-            
-            frappe.msgprint(f"Stock Entry {stock_entry.name} created successfully")
-            
-        except Exception as e:
-            frappe.throw(f"Error creating stock entry: {str(e)}")
+        for row in self.petty_cash_items:
+            if not row.item_code or not row.warehouse:
+                frappe.throw("Each item must have an Item Code and Warehouse.")
 
-def on_cancel(self):
-    self.make_gl_entries(cancel=True)
-    # Note: Stock entries created will need to be manually cancelled if needed
+            # Create stock ledger entry
+            frappe.get_doc({
+                "doctype": "Stock Entry",
+                "stock_entry_type": "Material Receipt",
+                "company": self.company,
+                "items": [{
+                    "item_code": row.item_code,
+                    "qty": row.qty,
+                    "t_warehouse": row.warehouse,
+                    "rate": row.rate
+                }]
+            }).insert(ignore_permissions=True).submit()
