@@ -36,7 +36,7 @@ class PettyCashVoucher(Document):
     def make_gl_entries(self, cancel=False):
         gl_entries = []
 
-        # Debit: Petty Cash Details
+    # Optional: Petty Cash Details (Expense Entries)
         for row in self.petty_cash_details:
             if not row.expense_account:
                 frappe.throw("Expense Account is required in Petty Cash Details.")
@@ -55,7 +55,7 @@ class PettyCashVoucher(Document):
                 "project": row.project
             }, row=row))
 
-        # Debit: VAT Details
+    # Optional: VAT Details
         for vat in self.vat_details:
             if not vat.vat_account:
                 frappe.throw("VAT Account is required in VAT Details.")
@@ -67,19 +67,46 @@ class PettyCashVoucher(Document):
                 "remarks": "VAT Entry"
             }))
 
-        # Credit: Account Paid From
-        gl_entries.append(self.get_gl_dict({
-            "account": self.account_paid_from,
-            "credit": flt(self.amount),
-            "credit_in_account_currency": flt(self.amount),
-            "against": ", ".join(
-                [row.expense_account for row in self.petty_cash_details if row.expense_account]
-            ),
-            "remarks": "Paid from Petty Cash Account"
-        }))
+    # ✅ Petty Cash Items (Stock Purchases)
+        # 3. Debit Stock Accounts (from Petty Cash Items)
+        for item in self.petty_cash_items:
+            if not item.item_code or not item.warehouse:
+                frappe.throw(f"Item Code and Warehouse are required for item {item.item_code or ''}.")
+
+            # ✅ Get stock account from the Warehouse
+            stock_account = frappe.db.get_value("Warehouse", item.warehouse, "account")
+            if not stock_account:
+                frappe.throw(f"Warehouse '{item.warehouse}' does not have a linked stock account.")
+
+            gl_entries.append(self.get_gl_dict({
+                "account": stock_account,
+                "debit": flt(item.amount),
+                "debit_in_account_currency": flt(item.amount),
+                "against": self.account_paid_from,
+                "remarks": f"Stock purchase for item {item.item_code}",
+                "cost_center": item.cost_center  # Optional
+            }, row=item))
+
+        # ✅ Credit: Account Paid From (only if total > 0)
+        if flt(self.amount) > 0:
+            # Dynamically generate `against` accounts used in debits
+            against_accounts = []
+            against_accounts += [row.expense_account for row in self.petty_cash_details if row.expense_account]
+            against_accounts += [vat.vat_account for vat in self.vat_details if vat.vat_account]
+            # Use stock_account from above, but since it's per item, collect all
+            against_accounts += [frappe.db.get_value("Warehouse", item.warehouse, "account") for item in self.petty_cash_items if item.warehouse]
+
+            gl_entries.append(self.get_gl_dict({
+                "account": self.account_paid_from,
+                "credit": flt(self.amount),
+                "credit_in_account_currency": flt(self.amount),
+                "against": ", ".join(set(against_accounts)),
+                "remarks": "Paid from Petty Cash Account"
+            }))
 
         # Submit GL Entries
         make_gl_entries(gl_entries, cancel=cancel, update_outstanding='No')
+
 
     def get_gl_dict(self, args, row=None):
         account_currency = get_account_currency(args.get("account"))
