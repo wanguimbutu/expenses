@@ -11,9 +11,7 @@ class PettyCashVoucher(Document):
         self.set_default_cost_centers()
 
     def calculate_totals(self):
-        for row in self.petty_cash_items:
-            row.amount = flt(row.qty) * flt(row.rate)
-
+    # Don't overwrite item.amount
         self.total = sum(flt(row.debit) for row in self.petty_cash_details)
         self.total_vat = sum(flt(row.amount) for row in self.vat_details)
         self.items_total = sum(flt(row.amount) for row in self.petty_cash_items)
