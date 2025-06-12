@@ -6,6 +6,19 @@ from erpnext.accounts.utils import get_account_currency
 
 class PettyCashVoucher(Document):
     def validate(self):
+       # self.validate_user_account_access()
+        #self.calculate_totals()
+        self.set_default_cost_centers()
+
+
+import frappe
+from frappe.model.document import Document
+from frappe.utils import flt, nowdate
+from erpnext.accounts.general_ledger import make_gl_entries
+from erpnext.accounts.utils import get_account_currency
+
+class PettyCashVoucher(Document):
+    def validate(self):
         self.calculate_totals()
         self.set_default_cost_centers()
 
@@ -154,3 +167,4 @@ class PettyCashVoucher(Document):
             doc.insert(ignore_permissions=True)
             doc.submit()
             frappe.msgprint(f"Stock Entry created for item {row.item_code}")
+    
