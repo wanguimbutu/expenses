@@ -12,6 +12,11 @@ class PettyCashVoucher(Document):
 
 
     def calculate_totals(self):
+        # ✅ Ensure item.amount exists (in case frontend missed it)
+        for item in self.petty_cash_items:
+            if not item.amount:
+                item.amount = flt(item.qty) * flt(item.rate)
+
         self.total = sum(flt(row.debit) for row in self.petty_cash_details)
         self.total_vat = sum(flt(row.amount) for row in self.vat_details)
         self.items_total = sum(flt(row.amount) for row in self.petty_cash_items)
