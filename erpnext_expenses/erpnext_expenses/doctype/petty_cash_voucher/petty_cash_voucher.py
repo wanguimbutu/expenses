@@ -12,11 +12,13 @@ class PettyCashVoucher(Document):
 
 
     def calculate_totals(self):
+        self.items_total = 0
         for row in self.petty_cash_items:
             row.amount = flt(row.qty) * flt(row.rate)
+            self.items_total += row.amount
+
         self.total = sum(flt(row.debit) for row in self.petty_cash_details)
         self.total_vat = sum(flt(row.amount) for row in self.vat_details)
-        self.items_total = sum(flt(row.amount) for row in self.petty_cash_items)
         self.amount = self.total + self.total_vat + self.items_total
 
 
@@ -138,8 +140,8 @@ class PettyCashVoucher(Document):
             if not row.item_code or not row.warehouse:
                 frappe.throw("Each item must have an Item Code and Warehouse.")
 
-            # Create stock ledger entry
-            frappe.get_doc({
+        try:
+            stock_entry = frappe.get_doc({
                 "doctype": "Stock Entry",
                 "stock_entry_type": "Material Receipt",
                 "company": self.company,
@@ -147,6 +149,10 @@ class PettyCashVoucher(Document):
                     "item_code": row.item_code,
                     "qty": row.qty,
                     "t_warehouse": row.warehouse,
-                    "rate": row.rate
+                    "basic_rate": row.rate
                 }]
-            }).insert(ignore_permissions=True).submit()
+            })
+            stock_entry.insert(ignore_permissions=True)
+            stock_entry.submit()
+        except Exception as e:
+            frappe.throw(f"Failed to create stock entry for item {row.item_code}: {e}")
