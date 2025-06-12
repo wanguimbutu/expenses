@@ -27,6 +27,10 @@
   "total_vat",
   "section_break_gstm",
   "petty_cash_items",
+  "section_break_fdnp",
+  "column_break_wetf",
+  "column_break_vsxd",
+  "items_total",
   "section_break_ns5f",
   "amended_from"
  ],
@@ -152,12 +156,29 @@
    "fieldtype": "Table",
    "label": "Petty Cash Items",
    "options": "Petty Cash Items"
+  },
+  {
+   "fieldname": "section_break_fdnp",
+   "fieldtype": "Section Break"
+  },
+  {
+   "fieldname": "column_break_wetf",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "column_break_vsxd",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "items_total",
+   "fieldtype": "Currency",
+   "label": "Items Total"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-06-11 22:38:41.080704",
+ "modified": "2025-06-12 10:42:02.281830",
  "modified_by": "Administrator",
  "module": "Erpnext Expenses",
  "name": "Petty Cash Voucher",
