@@ -7,11 +7,17 @@ from erpnext.accounts.utils import get_account_currency
 class PettyCashVoucher(Document):
     def validate(self):
        #self.validate_user_account_access()
-       # self.calculate_totals()
+        self.calculate_totals()
         self.set_default_cost_centers()
 
 
-    
+    def calculate_totals(self):
+        for row in self.petty_cash_items:
+            row.amount = flt(row.qty) * flt(row.rate)
+        self.total = sum(flt(row.debit) for row in self.petty_cash_details)
+        self.total_vat = sum(flt(row.amount) for row in self.vat_details)
+        self.items_total = sum(flt(row.amount) for row in self.petty_cash_items)
+        self.amount = self.total + self.total_vat + self.items_total
 
 
     def set_default_cost_centers(self):
@@ -128,25 +134,28 @@ class PettyCashVoucher(Document):
         })
     
     def update_inventory(self):
-        """Alternative method: Create stock entry then update rates via SQL"""
+        """Create stock entry for petty cash items"""
         
         if not self.petty_cash_items:
             return
             
         try:
-            # Create stock entry normally first
+            # Create a single Stock Entry for all items
             stock_entry = frappe.new_doc("Stock Entry")
             stock_entry.stock_entry_type = "Material Receipt"
             stock_entry.company = self.company
             stock_entry.posting_date = self.posting_date
             stock_entry.set_posting_time = 1
+            #stock_entry.posting_time = "12:00:00"
             
             for row in self.petty_cash_items:
                 if not row.item_code or not row.warehouse:
                     frappe.throw("Each item must have an Item Code and Warehouse.")
                 
+                # Get item details
                 item = frappe.get_doc("Item", row.item_code)
                 
+                # Add item to stock entry
                 stock_entry.append("items", {
                     "item_code": row.item_code,
                     "qty": flt(row.qty),
@@ -158,39 +167,15 @@ class PettyCashVoucher(Document):
                     "cost_center": row.cost_center or frappe.db.get_value("Company", self.company, "cost_center")
                 })
             
+            # Save and submit
             stock_entry.save(ignore_permissions=True)
-            
-            # Update rates directly in database before submit
-            for i, row in enumerate(self.petty_cash_items):
-                frappe.db.sql("""
-                    UPDATE `tabStock Entry Detail` 
-                    SET basic_rate = %s, basic_amount = %s, amount = %s, valuation_rate = %s
-                    WHERE parent = %s AND item_code = %s AND idx = %s
-                """, (
-                    flt(row.rate),
-                    flt(row.qty) * flt(row.rate),
-                    flt(row.qty) * flt(row.rate),
-                    flt(row.rate),
-                    stock_entry.name,
-                    row.item_code,
-                    i + 1
-                ))
-            
-            # Update total in parent
-            total_amount = sum(flt(row.qty) * flt(row.rate) for row in self.petty_cash_items)
-            frappe.db.sql("""
-                UPDATE `tabStock Entry` 
-                SET total_outgoing_value = %s, total_incoming_value = %s, value_difference = %s
-                WHERE name = %s
-            """, (0, total_amount, total_amount, stock_entry.name))
-            
-            frappe.db.commit()
-            
-            # Now submit
-            stock_entry.reload()
             stock_entry.submit()
             
-            frappe.msgprint(f"Stock Entry {stock_entry.name} created successfully with custom rates")
+            frappe.msgprint(f"Stock Entry {stock_entry.name} created successfully")
             
         except Exception as e:
             frappe.throw(f"Error creating stock entry: {str(e)}")
+
+def on_cancel(self):
+    self.make_gl_entries(cancel=True)
+    # Note: Stock entries created will need to be manually cancelled if needed
