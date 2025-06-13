@@ -25,17 +25,29 @@ class PettyCashVoucher(Document):
                 row.cost_center = default_cc
 
     def ensure_cash_supplier_exists(self):
-        if not frappe.db.exists("Supplier", "Cash Supplier"):
+        """Ensure Cash Supplier exists with proper error handling"""
+        supplier_name = "Cash Supplier"
+        
+        # Double-check existence
+        if frappe.db.exists("Supplier", supplier_name):
+            return
+        
+        try:
             supplier = frappe.get_doc({
                 "doctype": "Supplier",
-                "supplier_name": "Cash Supplier",
+                "supplier_name": supplier_name,
                 "supplier_type": "Company",
                 "supplier_group": "All Supplier Groups",
                 "is_internal_supplier": 0
             })
             supplier.insert(ignore_permissions=True)
-        frappe.db.commit() 
-        frappe.msgprint(f"Created supplier: {supplier.supplier_name}")
+            frappe.msgprint(f"Created supplier: {supplier.supplier_name}")
+            
+        except frappe.DuplicateEntryError:
+            # Another process created it simultaneously
+            frappe.msgprint("Cash Supplier already exists (created by another process)")
+        except Exception as e:
+            frappe.throw(f"Failed to create Cash Supplier: {str(e)}")
 
     def on_submit(self):
         self.create_purchase_documents()
@@ -48,7 +60,7 @@ class PettyCashVoucher(Document):
     def create_purchase_documents(self):
         if not self.petty_cash_items:
             return
-
+        self.ensure_cash_supplier_exists()
         valid_items = []
         for row in self.petty_cash_items:
             if not row.item_code or not row.warehouse:
@@ -67,7 +79,7 @@ class PettyCashVoucher(Document):
         try:
             if not frappe.db.exists("Supplier", "Cash Supplier"):
                 frappe.throw("Cash Supplier not found. Cannot create Purchase Receipt.")
-                
+
             pr_doc = frappe.get_doc({
                 "doctype": "Purchase Receipt",
                 "supplier": "Cash Supplier",
