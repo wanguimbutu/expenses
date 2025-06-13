@@ -30,11 +30,10 @@ class PettyCashVoucher(Document):
             supplier_doc = frappe.get_doc({
                 "doctype": "Supplier",
                 "supplier_name": supplier_name,
-                "supplier_group": "All Supplier Groups",  
+                "supplier_group": "All Supplier Groups",
                 "supplier_type": "Company"
             })
             supplier_doc.insert(ignore_permissions=True)
-            frappe.db.commit()  
             frappe.msgprint(f"Created supplier: {supplier_name}")
 
     def on_submit(self):
