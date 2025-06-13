@@ -25,7 +25,7 @@ class PettyCashVoucher(Document):
                 row.cost_center = default_cc
 
     def ensure_cash_supplier_exists(self):
-        supplier_name = "Cash Supplier"
+        supplier_name = "SUP-0140"
         if not frappe.db.exists("Supplier", supplier_name):
             supplier_doc = frappe.get_doc({
                 "doctype": "Supplier",
@@ -66,7 +66,7 @@ class PettyCashVoucher(Document):
         try:
             pr_doc = frappe.get_doc({
                 "doctype": "Purchase Receipt",
-                "supplier": "Cash Supplier",
+                "supplier": "SUP-0140",
                 "company": self.company,
                 "posting_date": self.posting_date,
                 "items": []
