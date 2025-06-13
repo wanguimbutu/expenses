@@ -9,10 +9,15 @@
   "naming_series",
   "account_paid_from",
   "amount",
+  "purchase_receipt",
+  "purchase_invoice",
+  "payment_entry",
   "column_break_uxxz",
   "posting_date",
   "company",
   "attach",
+  "is_expense",
+  "is_purchase",
   "section_break_fzpc",
   "petty_cash_details",
   "section_break_kaex",
@@ -174,12 +179,42 @@
    "fieldname": "items_total",
    "fieldtype": "Currency",
    "label": "Items Total"
+  },
+  {
+   "fieldname": "purchase_receipt",
+   "fieldtype": "Link",
+   "label": "Purchase Receipt",
+   "options": "Purchase Receipt"
+  },
+  {
+   "fieldname": "purchase_invoice",
+   "fieldtype": "Link",
+   "label": "Purchase Invoice",
+   "options": "Purchase Invoice"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_expense",
+   "fieldtype": "Check",
+   "label": "Is Expense"
+  },
+  {
+   "default": "0",
+   "fieldname": "is_purchase",
+   "fieldtype": "Check",
+   "label": "Is Purchase"
+  },
+  {
+   "fieldname": "payment_entry",
+   "fieldtype": "Link",
+   "label": "Payment Entry",
+   "options": "Payment Entry"
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-06-12 12:03:00.511841",
+ "modified": "2025-06-13 11:27:44.636092",
  "modified_by": "Administrator",
  "module": "Erpnext Expenses",
  "name": "Petty Cash Voucher",

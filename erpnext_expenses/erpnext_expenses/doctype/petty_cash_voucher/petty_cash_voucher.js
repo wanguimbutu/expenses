@@ -17,6 +17,24 @@ frappe.ui.form.on('Petty Cash Voucher', {
                 }   
             };
         });
+        toggle_child_tables(frm);
+    },
+    refresh: function(frm) {
+        toggle_child_tables(frm);
+    },
+
+    is_expense: function(frm) {
+        if (frm.doc.is_expense) {
+            frm.set_value('is_purchase', 0);
+        }
+        toggle_child_tables(frm);
+    },
+
+    is_purchase: function(frm) {
+        if (frm.doc.is_purchase) {
+            frm.set_value('is_expense', 0);
+        }
+        toggle_child_tables(frm);
     },
 
     validate: function(frm) {
@@ -92,7 +110,6 @@ frappe.ui.form.on('Petty Cash Vat Details', {
     }
 });
 
-// New: Handle Petty Cash Items table calculations
 frappe.ui.form.on('Petty Cash Items', {
     qty: function(frm, cdt, cdn) {
         calculate_item_amount(frm, cdt, cdn);
@@ -115,53 +132,57 @@ frappe.ui.form.on('Petty Cash Items', {
     }
 });
 
-// Function to calculate individual item amount (rate * qty)
 function calculate_item_amount(frm, cdt, cdn) {
     const item = locals[cdt][cdn];
     const amount = flt(item.rate || 0) * flt(item.qty || 0);
     
     frappe.model.set_value(cdt, cdn, 'amount', amount);
     
-    // Refresh the field to show updated value
     frm.refresh_field('petty_cash_items');
     
-    // Calculate totals after updating amount
     calculate_totals(frm);
 }
 
-// Updated calculate_totals function to include petty cash items
 function calculate_totals(frm) {
     let total = 0;
     let total_vat = 0;
     let items_total = 0;
 
-    // Calculate Petty Cash Details total
     if (frm.doc.petty_cash_details) {
         frm.doc.petty_cash_details.forEach(row => {
             total += flt(row.debit);
         });
     }
 
-    // Calculate VAT Details total
     if (frm.doc.vat_details) {
         frm.doc.vat_details.forEach(row => {
             total_vat += flt(row.amount);
         });
     }
 
-    // Calculate Petty Cash Items total
     if (frm.doc.petty_cash_items) {
         frm.doc.petty_cash_items.forEach(row => {
             items_total += flt(row.amount);
         });
     }
 
-    // Set individual totals
     frm.set_value('total', total);
     frm.set_value('total_vat', total_vat);
     frm.set_value('items_total', items_total);
 
-    // Calculate and set grand total (amount field)
     const grand_total = total + total_vat + items_total;
     frm.set_value('amount', grand_total);
+}
+
+function toggle_child_tables(frm) {
+    const show_expense = frm.doc.is_expense === 1;
+    const show_purchase = frm.doc.is_purchase === 1;
+
+    frm.toggle_display('petty_cash_details', show_expense);
+    frm.toggle_display('vat_details', show_expense);
+    frm.toggle_display('total', show_expense);
+    frm.toggle_display('total_vat', show_expense);
+
+    frm.toggle_display('petty_cash_items', show_purchase);
+    frm.toggle_display('items_total', show_purchase);
 }
