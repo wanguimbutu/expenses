@@ -24,30 +24,33 @@ class PettyCashVoucher(Document):
             if not row.cost_center:
                 row.cost_center = default_cc
 
-    def ensure_cash_supplier_exists(self):
-        """Ensure Cash Supplier exists with proper error handling"""
-        supplier_name = "Cash Supplier"
+    def get_cash_supplier_id(self):
+        """Get the actual supplier ID for Cash Supplier, create if doesn't exist"""
+        # First try to find existing supplier by supplier_name
+        supplier_id = frappe.db.get_value("Supplier", {"supplier_name": "Cash Supplier"}, "name")
         
-        # Double-check existence
-        if frappe.db.exists("Supplier", supplier_name):
-            return
-        
-        try:
-            supplier = frappe.get_doc({
-                "doctype": "Supplier",
-                "supplier_name": supplier_name,
-                "supplier_type": "Company",
-                "supplier_group": "All Supplier Groups",
-                "is_internal_supplier": 0
-            })
-            supplier.insert(ignore_permissions=True)
-            frappe.msgprint(f"Created supplier: {supplier.supplier_name}")
+        if supplier_id:
+            return supplier_id
             
-        except frappe.DuplicateEntryError:
-            # Another process created it simultaneously
-            frappe.msgprint("Cash Supplier already exists (created by another process)")
+        # If not found, create new supplier
+        supplier = frappe.get_doc({
+            "doctype": "Supplier",
+            "supplier_name": "Cash Supplier",
+            "supplier_type": "Company",
+            "supplier_group": "All Supplier Groups",
+            "is_internal_supplier": 0
+        })
+        supplier.insert(ignore_permissions=True)
+        frappe.msgprint(f"Created supplier: {supplier.supplier_name} with ID: {supplier.name}")
+        
+        return supplier.name  # Return the actual document ID
+
+    def ensure_cash_supplier_exists(self):
+        """Ensure Cash Supplier exists and store the ID"""
+        try:
+            self.cash_supplier_id = self.get_cash_supplier_id()
         except Exception as e:
-            frappe.throw(f"Failed to create Cash Supplier: {str(e)}")
+            frappe.throw(f"Error ensuring Cash Supplier exists: {str(e)}")
 
     def on_submit(self):
         self.create_purchase_documents()
@@ -60,7 +63,7 @@ class PettyCashVoucher(Document):
     def create_purchase_documents(self):
         if not self.petty_cash_items:
             return
-        self.ensure_cash_supplier_exists()
+
         valid_items = []
         for row in self.petty_cash_items:
             if not row.item_code or not row.warehouse:
@@ -77,12 +80,12 @@ class PettyCashVoucher(Document):
 
     def create_purchase_receipt(self, items):
         try:
-            if not frappe.db.exists("Supplier", "Cash Supplier"):
-                frappe.throw("Cash Supplier not found. Cannot create Purchase Receipt.")
-
+            
+            supplier_id = getattr(self, 'cash_supplier_id', None) or self.get_cash_supplier_id()
+            
             pr_doc = frappe.get_doc({
                 "doctype": "Purchase Receipt",
-                "supplier": "Cash Supplier",
+                "supplier": supplier_id,  
                 "company": self.company,
                 "posting_date": self.posting_date,
                 "items": []
@@ -110,9 +113,12 @@ class PettyCashVoucher(Document):
 
     def create_purchase_invoice(self, purchase_receipt, items):
         try:
+            # Use the stored supplier ID
+            supplier_id = getattr(self, 'cash_supplier_id', None) or self.get_cash_supplier_id()
+            
             pi_doc = frappe.get_doc({
                 "doctype": "Purchase Invoice",
-                "supplier": "Cash Supplier",
+                "supplier": supplier_id,  # Use actual supplier ID
                 "company": self.company,
                 "posting_date": self.posting_date,
                 "items": []
