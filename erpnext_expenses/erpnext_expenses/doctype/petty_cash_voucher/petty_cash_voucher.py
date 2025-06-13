@@ -25,16 +25,17 @@ class PettyCashVoucher(Document):
                 row.cost_center = default_cc
 
     def ensure_cash_supplier_exists(self):
-        supplier_name = "Cash Supplier"
-        if not frappe.db.exists("Supplier", supplier_name):
-            supplier_doc = frappe.get_doc({
+        if not frappe.db.exists("Supplier", "Cash Supplier"):
+            supplier = frappe.get_doc({
                 "doctype": "Supplier",
-                "supplier_name": supplier_name,
+                "supplier_name": "Cash Supplier",
+                "supplier_type": "Company",
                 "supplier_group": "All Supplier Groups",
-                "supplier_type": "Company"
+                "is_internal_supplier": 0
             })
-            supplier_doc.insert(ignore_permissions=True)
-            frappe.msgprint(f"Created supplier: {supplier_name}")
+            supplier.insert(ignore_permissions=True)
+        frappe.db.commit() 
+        frappe.msgprint(f"Created supplier: {supplier.supplier_name}")
 
     def on_submit(self):
         self.create_purchase_documents()
@@ -64,6 +65,9 @@ class PettyCashVoucher(Document):
 
     def create_purchase_receipt(self, items):
         try:
+            if not frappe.db.exists("Supplier", "Cash Supplier"):
+                frappe.throw("Cash Supplier not found. Cannot create Purchase Receipt.")
+                
             pr_doc = frappe.get_doc({
                 "doctype": "Purchase Receipt",
                 "supplier": "Cash Supplier",
