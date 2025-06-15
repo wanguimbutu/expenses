@@ -9,7 +9,7 @@ class PettyCashVoucher(Document):
     def validate(self):
         self.calculate_totals()
         self.set_default_cost_centers()
-        self.ensure_cash_supplier_exists()
+        self.get_cash_supplier_id()
 
     def calculate_totals(self):
         self.total = sum(flt(row.debit) for row in self.petty_cash_details)
@@ -24,9 +24,13 @@ class PettyCashVoucher(Document):
             if not row.cost_center:
                 row.cost_center = default_cc
 
-    def ensure_cash_supplier_exists(self):
+    def get_cash_supplier_id(self):
+        if hasattr(self, "cash_supplier_id") and self.cash_supplier_id:
+            return self.cash_supplier_id
+
         supplier_name = "Cash Supplier"
-        if not frappe.db.exists("Supplier", supplier_name):
+        supplier_id = frappe.db.get_value("Supplier", {"supplier_name": supplier_name}, "name")
+        if not supplier_id:
             supplier_doc = frappe.get_doc({
                 "doctype": "Supplier",
                 "supplier_name": supplier_name,
@@ -34,7 +38,13 @@ class PettyCashVoucher(Document):
                 "supplier_type": "Company"
             })
             supplier_doc.insert(ignore_permissions=True)
-            frappe.msgprint(f"Created supplier: {supplier_name}")
+            frappe.msgprint(f"Created supplier: {supplier_doc.name}")
+            self.cash_supplier_id = supplier_doc.name
+        else:
+            self.cash_supplier_id = supplier_id
+
+        return self.cash_supplier_id
+
 
     def on_submit(self):
         self.create_purchase_documents()
@@ -64,9 +74,10 @@ class PettyCashVoucher(Document):
 
     def create_purchase_receipt(self, items):
         try:
+            supplier_id = self.get_cash_supplier_id()
             pr_doc = frappe.get_doc({
                 "doctype": "Purchase Receipt",
-                "supplier": "Cash Supplier",
+                "supplier": supplier_id,
                 "company": self.company,
                 "posting_date": self.posting_date,
                 "items": []
@@ -92,11 +103,13 @@ class PettyCashVoucher(Document):
         except Exception as e:
             frappe.throw(f"Error creating Purchase Receipt: {str(e)}")
 
+
     def create_purchase_invoice(self, purchase_receipt, items):
         try:
+            supplier_id = self.get_cash_supplier_id()
             pi_doc = frappe.get_doc({
                 "doctype": "Purchase Invoice",
-                "supplier": "SUP-0140",
+                "supplier": supplier_id,
                 "company": self.company,
                 "posting_date": self.posting_date,
                 "items": []
