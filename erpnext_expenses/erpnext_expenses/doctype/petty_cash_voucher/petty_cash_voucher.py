@@ -112,6 +112,8 @@ class PettyCashVoucher(Document):
                 "supplier": supplier_id,
                 "company": self.company,
                 "posting_date": self.posting_date,
+                "bill_no": self.name,  
+                "bill_date": self.posting_date,
                 "items": []
             })
 
@@ -146,6 +148,7 @@ class PettyCashVoucher(Document):
 
         except Exception as e:
             frappe.throw(f"Error creating Purchase Invoice or Payment Entry: {str(e)}")
+
 
     def cancel_purchase_documents(self):
         if hasattr(self, 'purchase_invoice') and self.purchase_invoice:
