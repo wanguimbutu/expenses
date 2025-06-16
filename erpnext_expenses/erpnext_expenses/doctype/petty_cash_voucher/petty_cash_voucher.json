@@ -184,13 +184,15 @@
    "fieldname": "purchase_receipt",
    "fieldtype": "Link",
    "label": "Purchase Receipt",
-   "options": "Purchase Receipt"
+   "options": "Purchase Receipt",
+   "read_only": 1
   },
   {
    "fieldname": "purchase_invoice",
    "fieldtype": "Link",
    "label": "Purchase Invoice",
-   "options": "Purchase Invoice"
+   "options": "Purchase Invoice",
+   "read_only": 1
   },
   {
    "default": "0",
@@ -202,19 +204,20 @@
    "default": "0",
    "fieldname": "is_purchase",
    "fieldtype": "Check",
-   "label": "Is Purchase"
+   "label": "Is Purchase Stock Item"
   },
   {
    "fieldname": "payment_entry",
    "fieldtype": "Link",
    "label": "Payment Entry",
-   "options": "Payment Entry"
+   "options": "Payment Entry",
+   "read_only": 1
   }
  ],
  "index_web_pages_for_search": 1,
  "is_submittable": 1,
  "links": [],
- "modified": "2025-06-13 11:27:44.636092",
+ "modified": "2025-06-16 14:46:53.394299",
  "modified_by": "Administrator",
  "module": "Erpnext Expenses",
  "name": "Petty Cash Voucher",

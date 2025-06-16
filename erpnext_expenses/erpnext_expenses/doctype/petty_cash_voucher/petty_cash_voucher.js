@@ -178,10 +178,11 @@ function toggle_child_tables(frm) {
     const show_expense = frm.doc.is_expense === 1;
     const show_purchase = frm.doc.is_purchase === 1;
 
+    frm.toggle_display('vat_details', true);
+    frm.toggle_display('total_vat', true);
+
     frm.toggle_display('petty_cash_details', show_expense);
-    frm.toggle_display('vat_details', show_expense);
     frm.toggle_display('total', show_expense);
-    frm.toggle_display('total_vat', show_expense);
 
     frm.toggle_display('petty_cash_items', show_purchase);
     frm.toggle_display('items_total', show_purchase);
