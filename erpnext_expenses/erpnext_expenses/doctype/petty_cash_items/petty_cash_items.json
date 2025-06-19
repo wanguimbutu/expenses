@@ -12,7 +12,9 @@
   "rate",
   "warehouse",
   "amount",
-  "cost_center"
+  "cost_center",
+  "user_remarks",
+  "supplier"
  ],
  "fields": [
   {
@@ -62,12 +64,25 @@
    "fieldtype": "Link",
    "label": "Cost Center",
    "options": "Cost Center"
+  },
+  {
+   "fieldname": "user_remarks",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "User Remarks"
+  },
+  {
+   "fieldname": "supplier",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Supplier",
+   "options": "Supplier"
   }
  ],
  "index_web_pages_for_search": 1,
  "istable": 1,
  "links": [],
- "modified": "2025-06-12 12:58:24.768784",
+ "modified": "2025-06-19 08:28:23.444196",
  "modified_by": "Administrator",
  "module": "Erpnext Expenses",
  "name": "Petty Cash Items",
