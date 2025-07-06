@@ -46,6 +46,45 @@ class PettyCashVoucher(Document):
         return self.cash_supplier_id
 
 
+    def get_vat_tax_details_from_item(self, item_code):
+        """Returns a list of VAT rows with account_head (from tax_type) and rate."""
+        tax_template_links = frappe.get_all(
+            "Item Tax",
+            filters={"parent": item_code, "parenttype": "Item"},
+            fields=["item_tax_template"]
+        )
+
+        vat_taxes = []
+
+        for row in tax_template_links:
+            tax_template = row.item_tax_template
+            if not tax_template:
+                continue
+
+            tax_details = frappe.get_all(
+                "Item Tax Template Detail",
+                filters={"parent": tax_template},
+                fields=["tax_type", "tax_rate"]
+            )
+
+            for tax in tax_details:
+
+                if "VAT" in (tax.tax_type or "").upper():
+                    account_head = tax.tax_type  
+
+                    if not account_head:
+                        frappe.throw(
+                            f"Missing VAT account in Item Tax Template '{tax_template}'."
+                        )
+
+                    vat_taxes.append({
+                        "account_head": account_head,
+                        "rate": flt(tax.tax_rate)
+                    })
+
+        return vat_taxes
+
+
     def on_submit(self):
         self.create_purchase_documents()
         self.make_gl_entries(cancel=False)
@@ -80,35 +119,36 @@ class PettyCashVoucher(Document):
                 "supplier": supplier_id,
                 "company": self.company,
                 "posting_date": self.posting_date,
-                "items": []
+                "items": [],
+                "taxes": []
             })
 
             for item in items:
-                vat_rate = self.get_item_vat_rate_from_item(item.item_code)
-                item_rate = flt(item.rate)
-                item_qty = flt(item.qty)
-
-                if vat_rate > 0:
-                    tax_fraction = vat_rate / (100 + vat_rate)
-                    tax_amount_per_unit = item_rate * tax_fraction
-                    base_rate = item_rate - tax_amount_per_unit
-                    total_vat = tax_amount_per_unit * item_qty
-
-                    # Store VAT temporarily for GL posting
-                    item._vat_amount = total_vat
-                    item._base_rate = base_rate
-                else:
-                    item._vat_amount = 0.0
-                    item._base_rate = item_rate
-
                 pr_doc.append("items", {
                     "item_code": item.item_code,
-                    "qty": item_qty,
-                    "rate": item._base_rate,
-                    "amount": item._base_rate * item_qty,
+                    "qty": flt(item.qty),
+                    "rate": flt(item.rate),  
+                    "amount": flt(item.amount),
                     "warehouse": item.warehouse,
                     "cost_center": item.cost_center or frappe.db.get_value("Company", self.company, "cost_center")
                 })
+
+            added_vat_keys = set()
+            for item in items:
+                vat_rows = self.get_vat_tax_details_from_item(item.item_code)
+                for vat in vat_rows:
+                    key = (vat["account_head"], vat["rate"])
+                    if key in added_vat_keys:
+                        continue
+                    added_vat_keys.add(key)
+
+                    pr_doc.append("taxes", {
+                        "charge_type": "On Net Total",
+                        "account_head": vat["account_head"],
+                        "description": "VAT",
+                        "rate": vat["rate"],
+                        "included_in_print_rate": 1
+                    })
 
             pr_doc.insert(ignore_permissions=True)
             pr_doc.submit()
@@ -128,9 +168,10 @@ class PettyCashVoucher(Document):
                 "supplier": supplier_id,
                 "company": self.company,
                 "posting_date": self.posting_date,
-                "bill_no": self.name,  
+                "bill_no": self.name,
                 "bill_date": self.posting_date,
-                "items": []
+                "items": [],
+                "taxes": []
             })
 
             for i, item in enumerate(items):
@@ -145,13 +186,29 @@ class PettyCashVoucher(Document):
                     "pr_detail": purchase_receipt.items[i].name
                 })
 
+            added_vat_keys = set()
+            for item in items:
+                vat_rows = self.get_vat_tax_details_from_item(item.item_code)
+                for vat in vat_rows:
+                    key = (vat["account_head"], vat["rate"])
+                    if key in added_vat_keys:
+                        continue
+                    added_vat_keys.add(key)
+
+                    pi_doc.append("taxes", {
+                        "charge_type": "On Net Total",
+                        "account_head": vat["account_head"],
+                        "description": "VAT",
+                        "rate": vat["rate"],
+                        "included_in_print_rate": 1
+                    })
+
             pi_doc.insert(ignore_permissions=True)
             pi_doc.submit()
 
             frappe.msgprint(f"Purchase Invoice {pi_doc.name} created successfully")
             self.db_set("purchase_invoice", pi_doc.name)
 
-            # Create and submit Payment Entry
             payment_entry = get_payment_entry("Purchase Invoice", pi_doc.name)
             payment_entry.posting_date = self.posting_date
             payment_entry.paid_from = self.account_paid_from
@@ -164,7 +221,6 @@ class PettyCashVoucher(Document):
 
         except Exception as e:
             frappe.throw(f"Error creating Purchase Invoice or Payment Entry: {str(e)}")
-
 
     def cancel_purchase_documents(self):
         if hasattr(self, 'purchase_invoice') and self.purchase_invoice:
@@ -192,7 +248,6 @@ class PettyCashVoucher(Document):
 
         gl_entries = []
 
-        # 1. Expense lines
         for row in self.petty_cash_details:
             if not row.expense_account:
                 frappe.throw("Expense Account is required in Petty Cash Details.")
@@ -211,7 +266,6 @@ class PettyCashVoucher(Document):
                 "project": row.project
             }, row=row))
 
-        # 2. VAT directly from petty_cash_items (calculated from rate)
         for item in self.petty_cash_items:
             if hasattr(item, "_vat_amount") and item._vat_amount > 0:
                 if not self.vat_account:
@@ -225,10 +279,8 @@ class PettyCashVoucher(Document):
                     "remarks": f"VAT for item {item.item_code}"
                 }))
 
-        # 3. Credit total (from account paid from)
         total_debits = sum(flt(d.get("debit", 0)) for d in gl_entries)
 
-        # Compose list of accounts credited against
         against_accounts = set()
         against_accounts.update(
             row.expense_account for row in self.petty_cash_details if row.expense_account
@@ -269,10 +321,12 @@ class PettyCashVoucher(Document):
             "against": args.get("against"),
             "cost_center": args.get("cost_center") or (getattr(row, "cost_center", None) if row else None),
             "project": args.get("project") or (getattr(row, "project", None) if row else None),
-            "remarks": args.get("remarks") or self.remarks or "Petty Cash Voucher",
+            "remarks": args.get("remarks") or f"Petty Cash Voucher: {self.name}",
             "account_currency": account_currency,
             "voucher_type": self.doctype,
             "voucher_no": self.name,
+            "reference_type": self.doctype,
+            "reference_name": self.name,
             "posting_time": nowdate(),
             "is_opening": "No"
         })
