@@ -84,11 +84,28 @@ class PettyCashVoucher(Document):
             })
 
             for item in items:
+                vat_rate = self.get_item_vat_rate_from_item(item.item_code)
+                item_rate = flt(item.rate)
+                item_qty = flt(item.qty)
+
+                if vat_rate > 0:
+                    tax_fraction = vat_rate / (100 + vat_rate)
+                    tax_amount_per_unit = item_rate * tax_fraction
+                    base_rate = item_rate - tax_amount_per_unit
+                    total_vat = tax_amount_per_unit * item_qty
+
+                    # Store VAT temporarily for GL posting
+                    item._vat_amount = total_vat
+                    item._base_rate = base_rate
+                else:
+                    item._vat_amount = 0.0
+                    item._base_rate = item_rate
+
                 pr_doc.append("items", {
                     "item_code": item.item_code,
-                    "qty": flt(item.qty),
-                    "rate": flt(item.rate),
-                    "amount": flt(item.amount),
+                    "qty": item_qty,
+                    "rate": item._base_rate,
+                    "amount": item._base_rate * item_qty,
                     "warehouse": item.warehouse,
                     "cost_center": item.cost_center or frappe.db.get_value("Company", self.company, "cost_center")
                 })
@@ -102,7 +119,6 @@ class PettyCashVoucher(Document):
 
         except Exception as e:
             frappe.throw(f"Error creating Purchase Receipt: {str(e)}")
-
 
     def create_purchase_invoice(self, purchase_receipt, items):
         try:
@@ -176,6 +192,7 @@ class PettyCashVoucher(Document):
 
         gl_entries = []
 
+        # 1. Expense lines
         for row in self.petty_cash_details:
             if not row.expense_account:
                 frappe.throw("Expense Account is required in Petty Cash Details.")
@@ -194,35 +211,44 @@ class PettyCashVoucher(Document):
                 "project": row.project
             }, row=row))
 
-        for vat in self.vat_details:
-            if not vat.vat_account:
-                frappe.throw("VAT Account is required in VAT Details.")
-            gl_entries.append(self.get_gl_dict({
-                "account": vat.vat_account,
-                "debit": flt(vat.amount),
-                "debit_in_account_currency": flt(vat.amount),
-                "against": self.account_paid_from,
-                "remarks": "VAT Entry"
-            }))
+        # 2. VAT directly from petty_cash_items (calculated from rate)
+        for item in self.petty_cash_items:
+            if hasattr(item, "_vat_amount") and item._vat_amount > 0:
+                if not self.vat_account:
+                    self.vat_account = frappe.get_value("Company", self.company, "default_vat_account")
 
+                gl_entries.append(self.get_gl_dict({
+                    "account": self.vat_account,
+                    "debit": flt(item._vat_amount),
+                    "debit_in_account_currency": flt(item._vat_amount),
+                    "against": self.account_paid_from,
+                    "remarks": f"VAT for item {item.item_code}"
+                }))
+
+        # 3. Credit total (from account paid from)
         total_debits = sum(flt(d.get("debit", 0)) for d in gl_entries)
-        frappe.msgprint(f"Total Debits Collected: {total_debits}\nExpected Amount: {self.amount}")
 
-        if flt(self.amount) > 0:
-            against_accounts = []
-            against_accounts += [row.expense_account for row in self.petty_cash_details if row.expense_account]
-            against_accounts += [vat.vat_account for vat in self.vat_details if vat.vat_account]
+        # Compose list of accounts credited against
+        against_accounts = set()
+        against_accounts.update(
+            row.expense_account for row in self.petty_cash_details if row.expense_account
+        )
+        if hasattr(self, "petty_cash_items"):
+            for item in self.petty_cash_items:
+                if hasattr(item, "_vat_amount") and item._vat_amount > 0:
+                    against_accounts.add(self.vat_account)
 
-            gl_entries.append(self.get_gl_dict({
-                "account": self.account_paid_from,
-                "credit": flt(self.amount),
-                "credit_in_account_currency": flt(self.amount),
-                "against": ", ".join(set(filter(None, against_accounts))),
-                "remarks": "Paid from Petty Cash Account"
-            }))
+        gl_entries.append(self.get_gl_dict({
+            "account": self.account_paid_from,
+            "credit": flt(self.amount),
+            "credit_in_account_currency": flt(self.amount),
+            "against": ", ".join(against_accounts),
+            "remarks": "Paid from Petty Cash Account"
+        }))
 
         total_credits = sum(flt(d.get("credit", 0)) for d in gl_entries)
-        frappe.msgprint(f"Final GL Entry Balancing:\n- Total Debits: {total_debits}\n- Total Credits: {total_credits}")
+
+        frappe.msgprint(f"GL Entry Balancing:\n- Total Debits: {total_debits}\n- Total Credits: {total_credits}")
 
         make_gl_entries(gl_entries, cancel=cancel, update_outstanding='No')
 
