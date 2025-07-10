@@ -23,6 +23,7 @@ frappe.ui.form.on('Petty Cash Voucher', {
             frm.set_value('purchase_receipt', '');
             frm.set_value('purchase_invoice', '');
             frm.set_value('payment_entry', '');
+            frm.set_value('amount', 0);
         }
     },
     refresh: function(frm) {
@@ -32,6 +33,7 @@ frappe.ui.form.on('Petty Cash Voucher', {
             frm.set_value('purchase_receipt', '');
             frm.set_value('purchase_invoice', '');
             frm.set_value('payment_entry', '');
+            frm.set_value('amount', 0);
         }
     },
 
