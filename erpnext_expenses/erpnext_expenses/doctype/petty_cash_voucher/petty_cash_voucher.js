@@ -18,9 +18,21 @@ frappe.ui.form.on('Petty Cash Voucher', {
             };
         });
         toggle_child_tables(frm);
+
+        if (frm.doc.amended_from && frm.doc.__islocal) {
+            frm.set_value('purchase_receipt', '');
+            frm.set_value('purchase_invoice', '');
+            frm.set_value('payment_entry', '');
+        }
     },
     refresh: function(frm) {
         toggle_child_tables(frm);
+
+        if (frm.doc.amended_from && frm.doc.__islocal) {
+            frm.set_value('purchase_receipt', '');
+            frm.set_value('purchase_invoice', '');
+            frm.set_value('payment_entry', '');
+        }
     },
 
     is_expense: function(frm) {
